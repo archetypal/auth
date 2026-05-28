@@ -1,0 +1,84 @@
+apiVersion: configuration.konghq.com/v1
+kind: KongClusterPlugin
+metadata:
+  name: jwt-rs256
+plugin: jwt
+config:
+  # Prefer kid for key rotation. Kong searches the configured claim
+  # in the JWT payload and header, so this can match a JWT header kid.
+  key_claim_name: kid
+
+  # Accept Authorization: Bearer <jwt>
+  header_names:
+    - authorization
+
+  # Validate registered temporal claims.
+  claims_to_verify:
+    - exp
+    - nbf
+
+  # Usually keep false: do not pass invalid/anonymous traffic upstream.
+  anonymous: null
+  run_on_preflight: true
+
+---
+
+apiVersion: v1
+kind: Secret
+metadata:
+  name: demo-rs256-jwt
+  namespace: kong
+  labels:
+    konghq.com/credential: jwt
+stringData:
+  # Must match the token's kid header because key_claim_name is "kid".
+  key: "373932351832523201"
+
+  algorithm: RS256
+
+  # Required by Kong Ingress Controller/declarative config even for RS256.
+  # This is not the RSA private key.
+  secret: unused-rs256-dummy-secret
+
+  # public key from "jwks_uri"
+  rsa_public_key: |
+    -----BEGIN PUBLIC KEY-----
+    MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAq6n/lSKZQndYLorydQJ6
+    xphPn2+mciQH7xxYSEWA1ru0is6fssVV169cWSXb5U0AZAE+URW3zZpfdpeaYBa/
+    DYo1QusZopHHbXnlE+wGe5yPPDFCnca7Uol/PChA4YCtdqzWm679WBODYyFPSAou
+    VToANoYVyFVc++SXqrF7swaltiph+EbSotA7zluLMzUarAT5552C0ZYiC5GyA0o7
+    HSpWPrzaK+olc/BsytXcmyIDDsfgmiqwdEzaa5b7xDuKcsVMGkPn3d/GPx+mrggQ
+    2vn8ZU0/10nDK0iBeqLSKwYy6AE2naZssKIyUCrOY22jmyqnxfnMXrHj0+cmBQ3M
+    ZwIDAQAB
+    -----END PUBLIC KEY-----
+
+---
+apiVersion: configuration.konghq.com/v1
+kind: KongConsumer
+metadata:
+  name: demo-client
+  namespace: kong
+username: demo-client
+credentials:
+  - demo-rs256-jwt
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: fastapi-scheduler
+  annotations:
+    konghq.com/plugins: jwt-rs256
+spec:
+  ingressClassName: kong
+  rules:
+    - host: api.example.local
+      http:
+        paths:
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: fastapi-scheduler
+                port:
+                  number: 80
