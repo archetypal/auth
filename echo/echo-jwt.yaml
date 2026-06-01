@@ -63,22 +63,33 @@ credentials:
   - demo-rs256-jwt
 
 ---
+
+apiVersion: networking.k8s.io/v1
+kind: IngressClass
+metadata:
+  name: kong
+spec:
+  controller: ingress-controllers.konghq.com/kong
+
+---
+
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: fastapi-scheduler
+  name: echo-server
   annotations:
+    # use the JWT plugin for this Ingress, which will apply to all paths
     konghq.com/plugins: jwt-rs256
 spec:
   ingressClassName: kong
   rules:
-    - host: api.example.local
+    - host: echo.example.com
       http:
         paths:
-          - path: /api
+          - path: /
             pathType: Prefix
             backend:
               service:
-                name: fastapi-scheduler
+                name: echo-server
                 port:
                   number: 80
