@@ -1,12 +1,60 @@
 # Kong
 
 
+## Create installer
+```sh
+helm repo add kong https://charts.konghq.com
+helm repo update
+
+
+helm show crds kong/ingress > crd.yaml
+helm template kong kong/ingress \
+  -n kong \
+  --create-namespace \
+  > install.yaml
+
+```
+
+
 ## Install Kong Ingress Controller
 Install kong in kubernetes cluster:
 ```sh
 kubectl create ns kong
+kubectl apply -f crd.yaml
 kubectl apply -f install.yaml
 ```
+
+
+## Test ingress
+Deploy a sample echo backend and route it through Kong.
+
+`echo.yaml` defines the echo Deployment/Service, an `IngressClass` named
+`kong` (the class the controller is configured with via
+`CONTROLLER_INGRESS_CLASS=kong`), and an `Ingress` for host
+`echo.example.com`.
+
+```sh
+kubectl apply -f echo.yaml
+kubectl get pods -l app=echo-server   # wait for Running
+```
+
+Send traffic to the proxy (the `kong-gateway-proxy` LoadBalancer Service on
+port 80):
+
+```sh
+# If the LoadBalancer has an external IP
+export PROXY_IP=$(kubectl -n kong get svc kong-gateway-proxy \
+  -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+curl -i http://$PROXY_IP/ -H "Host: echo.example.com"
+curl -i http://localhost/ -H "Host: echo.example.com"
+
+
+# Otherwise (kind/minikube), port-forward
+kubectl -n kong port-forward svc/kong-gateway-proxy 8000:80
+curl -i http://localhost:8000/ -H "Host: echo.example.com"
+```
+
+A `200` with the request echoed back as JSON confirms the ingress path works.
 
 
 ## Convert JWK to PEM 
