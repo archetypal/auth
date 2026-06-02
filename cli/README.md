@@ -9,18 +9,21 @@ work with Auth0, Keycloak, Okta, Microsoft Entra, and Google.
 ## Install
 
 ```sh
-chmod +x cli/auth.py
-ln -s "$PWD/cli/auth.py" /usr/local/bin/auth   # optional
+chmod +x auth.py
+ln -s "$PWD/auth.py" /usr/local/bin/auth
 ```
 
 Or just run as `./cli/auth.py ...` / `python3 cli/auth.py ...`.
 
+## Setup
+```sh
+export $(xargs < .env)
+```
+
 ## Usage
 
 ```sh
-auth login \
-  --issuer https://<host>.us1.zitadel.cloud \
-  --client-id 373933063840786304
+auth login
 
 auth whoami
 auth token                              # prints a valid access token

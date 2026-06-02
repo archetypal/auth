@@ -5,15 +5,19 @@ Run simple echo server behind Kong.
 See [kong](../kong/README.md) for information on installing Kong.
 
 
+## Echo Deployment/Service
+The same Deployment and Service may be used with different ingress settings:
 
-## Echo Direct
-Deploy a sample echo backend and route it through Kong.
+```sh
+kubectl apply -f echo.yaml
+kubectl get pods -l app=echo-server
+```
 
-`echo.yaml` defines the echo Deployment/Service, an `IngressClass` named `kong` (the class the controller is configured with via `CONTROLLER_INGRESS_CLASS=kong`), and an `Ingress` for host `echo.example.com`.
+## Echo Direct Ingress
+Ingress through Kong, no JWT check
 
 ```sh
 kubectl apply -f echo-direct.yaml
-kubectl get pods -l app=echo-server   # wait for Running
 ```
 
 Send traffic to the proxy (the `kong-gateway-proxy` LoadBalancer Service on
@@ -23,10 +27,8 @@ port 80):
 curl -i http://localhost/ -H "Host: echo.example.com"
 ```
 
-A `200` with the request echoed back as JSON confirms the ingress path works.
 
-
-## Echo JWT
+## Echo JWT Ingress
 
 
 Convert JWK to PEM 
@@ -58,4 +60,18 @@ HSpWPrzaK+olc/BsytXcmyIDDsfgmiqwdEzaa5b7xDuKcsVMGkPn3d/GPx+mrggQ
 2vn8ZU0/10nDK0iBeqLSKwYy6AE2naZssKIyUCrOY22jmyqnxfnMXrHj0+cmBQ3M
 ZwIDAQAB
 -----END PUBLIC KEY-----
+```
+
+
+
+```sh
+kubectl apply -f echo-jwt.yaml
+
+# no token
+curl -i http://localhost/ -H "Host: echo.example.com"
+
+curl -i http://localhost/ \
+  -H "Host: echo.example.com" \
+  -H "Authorization: Bearer $AUTH_JWT"
+
 ```
