@@ -70,6 +70,8 @@ kubectl apply -f echo-jwt.yaml
 # no token
 curl -i http://localhost/ -H "Host: echo.example.com"
 
+export AUTH_JWT=
+
 curl -i http://localhost/ \
   -H "Host: echo.example.com" \
   -H "Authorization: Bearer $AUTH_JWT"

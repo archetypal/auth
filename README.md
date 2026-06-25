@@ -7,4 +7,8 @@ Use a free account from zitadel, auth0, or the IDP of your choosing.
 ## TODO 
 - Expand usage of Kong, for example, API Rate Limiting
 - Test that token exchange does not invalidate normal refresh token
-- 
+- Add NetworkPolicy for services to only take ingress from Kong
+- Add X-Sub header.
+
+
+
